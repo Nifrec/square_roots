@@ -21,31 +21,16 @@ HEX_OFFSET = ord("a") - 10
 DIGIT_TO_STRING.update({ord(x) - HEX_OFFSET:x for x in ALPHABET})
 print(DIGIT_TO_STRING)
 
-def compute_square_root(num_digits: int, base=10) -> str:
+def compute_square_root(num_digits: int, k:float) -> str:
     """
-    Compute the first [num_digits] of sqrt(2),
+    Compute the first [num_digits] of sqrt(k),
     and return the result as a string.
 
     Arguments:
     * num_digits: amount of digits (precision) of the approximation 
-        of sqrt(2) in the output string.
-    * base: base of the number represented by the output string used.
-        base=10 gives a normal number, base=2 a binary number,
-        and base=16 a hexadecimal number.
-        Valid values have 2 ≤ base ≤ 34.
-        Digits representing the numbers 10, 11, ..., 34
-        are represented by "a", "b", ..., "z" respectively.
+        of sqrt(k) in the output string.
+    * k: number whose sqrt(k) is to be approximated.
     """
-    if base != 10:
-        raise NotImplementedError("Only base 10 supported at the moment")
-    cumprod = 1
-    digits = [None]*(num_digits-1)
-    for power in range(-1, -num_digits, -1):
-        for digit in range(9, -1, -1):
-            potential_new_cumprod = cumprod *((1 + 10**power * digit)**2)
-            if (potential_new_cumprod) <= 2:
-                digits[1-power] = digit
-                cumprod = potential_new_cumprod
-                break
-    return "1." + "".join(str(x) for x in digits)
+    cumsum = 0
+    raise NotImplementedError()
 

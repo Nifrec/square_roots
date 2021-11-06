@@ -20,7 +20,7 @@ ALPHABET = {chr(x) for x in range(ord("a"), ord("z")+1)}
 HEX_OFFSET = ord("a") - 10
 DIGIT_TO_STRING.update({ord(x) - HEX_OFFSET:x for x in ALPHABET})
 
-def compute_square_root(num_digits: int, k:float) -> str:
+def compute_square_root(num_digits: int, k:float, base:int = 10) -> str:
     """
     Compute the first [num_digits] of sqrt(k),
     and return the result as a string.
@@ -29,13 +29,24 @@ def compute_square_root(num_digits: int, k:float) -> str:
     * num_digits: amount of digits (precision) of the approximation 
         of sqrt(k) in the output string.
     * k: number whose sqrt(k) is to be approximated.
+    * base: base of the number represented by the output string used.
+        base=10 gives a normal number, base=2 a binary number,
+        and base=16 a hexadecimal number.
+        Valid values have 2 ≤ base ≤ 34.
+        Digits representing the numbers 10, 11, ..., 34
+        are represented by "a", "b", ..., "z" respectively.
+        (Higher bases are not supported as there are 
+        no more obvious alphabet symbols for it.
+        This is just a lack of conventions, not a theoretical one.)
     """
+    if base < 2 or base > 34:
+        raise ValueError("Base must be an integer in [2, 34]")
     # Invariant: sum_{i=0}^{num_digits} d[i]*(10^-i) = cumsum
     cumsum = 0
     d = [0]*num_digits
     for i in range(0, num_digits):
-        while ((cumsum + (d[i] + 1)* (10**(-i)))**2 <= k) and (d[i] < 9):
+        while ((cumsum + (d[i] + 1)* (base**(-i)))**2 <= k) and (d[i] < base-1):
             d[i] += 1
-        cumsum += d[i] * (10**(-i))
+        cumsum += d[i] * (base**(-i))
     return f"{d[0]}." + "".join((str(x) for x in d[1:]))
 

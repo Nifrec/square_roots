@@ -20,10 +20,13 @@ import unittest
 from square_roots.compute_square_root import compute_square_root
 
 class ComputeSquareRootTestCase(unittest.TestCase):
+    """
+    Test numerical computation of 
+    """
 
 
-    def run_test(self, num_digits:int, k:int, expected:str):
-        result = compute_square_root(num_digits, k)
+    def run_test(self, num_digits:int, k:int, expected:str, base:int=10):
+        result = compute_square_root(num_digits, k, base)
         self.assertEqual(expected, result)
 
     def test_single_digit_dec(self):
@@ -47,7 +50,32 @@ class ComputeSquareRootTestCase(unittest.TestCase):
         """
         self.run_test(num_digits=11, k=2, expected="1.4142135623")
 
-        
+    def test_sqrt_9(self):
+        """
+        Base case: the first 15 digits of the decimal representation 
+        of sqrt(9) are '3.0000...'.
+        """
+        self.run_test(num_digits=15, k=9, expected="3." + "0"*14)
 
+    def test_single_digit_bin(self):
+        """
+        Base case: the first digit of the binary representation 
+        of sqrt(2) is 1.
+        """
+        self.run_test(num_digits=1, k=2, base=2, expected="1.")
+
+    def test_single_digit_hex(self):
+        """
+        Base case: the first digit of the hexadecimal representation 
+        of sqrt(2) is 1.
+        """
+        self.run_test(num_digits=1, k=2, base=16, expected="1.")
+
+    def test_six_digits_binary(self):
+        """
+        Base case: the first digit of the binary representation 
+        of sqrt(2) are 1.01101.
+        """
+        self.run_test(num_digits=6, k=2, base=2, expected="1.01101")
 if __name__ == "__main__":
     unittest.main()

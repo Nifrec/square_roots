@@ -38,6 +38,12 @@ def compute_square_root(num_digits: int, k:float, base:int = 10) -> str:
         (Higher bases are not supported as there are 
         no more obvious alphabet symbols for it.
         This is just a lack of conventions, not a theoretical one.)
+
+    NOTE: Uses build-in float multiplication.
+    This limits the accuracy to machine precision.
+    It suffices to test the method, but is isn't reliable for many digits.
+    A software implementation of multiplication and addition could
+    of course solve this, so it is not a theoretical issue.
     """
     if base < 2 or base > 34:
         raise ValueError("Base must be an integer in [2, 34]")

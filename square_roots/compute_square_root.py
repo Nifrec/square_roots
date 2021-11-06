@@ -19,7 +19,6 @@ DIGIT_TO_STRING = {x:str(x) for x in range(0, 11)}
 ALPHABET = {chr(x) for x in range(ord("a"), ord("z")+1)}
 HEX_OFFSET = ord("a") - 10
 DIGIT_TO_STRING.update({ord(x) - HEX_OFFSET:x for x in ALPHABET})
-print(DIGIT_TO_STRING)
 
 def compute_square_root(num_digits: int, k:float) -> str:
     """
@@ -31,6 +30,12 @@ def compute_square_root(num_digits: int, k:float) -> str:
         of sqrt(k) in the output string.
     * k: number whose sqrt(k) is to be approximated.
     """
+    # Invariant: sum_{i=0}^{num_digits} d[i]*(10^-i) = cumsum
     cumsum = 0
-    raise NotImplementedError()
+    d = [0]*num_digits
+    for i in range(0, num_digits):
+        while ((cumsum + (d[i] + 1)* (10**(-i)))**2 <= k) and (d[i] < 9):
+            d[i] += 1
+        cumsum += d[i] * (10**(-i))
+    return f"{d[0]}." + "".join((str(x) for x in d[1:]))
 

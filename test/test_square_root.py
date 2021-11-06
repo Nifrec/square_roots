@@ -23,7 +23,7 @@ class ComputeSquareRootTestCase(unittest.TestCase):
 
 
     def run_test(self, num_digits:int, k:int, expected:str):
-        result = compute_square_root(num_digits, base)
+        result = compute_square_root(num_digits, k)
         self.assertEqual(expected, result)
 
     def test_single_digit_dec(self):

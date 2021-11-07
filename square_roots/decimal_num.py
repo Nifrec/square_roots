@@ -15,6 +15,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from __future__ import annotations
+import re
 
 from square_roots.digit_to_string import DIGIT_TO_STRING, STRING_TO_DIGIT
 
@@ -100,8 +101,18 @@ class DecimalNumber:
             This argument must satisfy 2 <= base <= 34
         """
         decimal_number_from_string(str_repr, base)
+        DecimalNumber.__parse_string(str_repr)
+    @staticmethod
+    def __parse_string(str_repr):
+        str_repr = str_repr.lower()
+        if re.fullmatch(r"[0-9a-z]+\.[0-9a-z]*", str_repr) is None:
+            raise ValueError("Invalid string representation.")
+
 
 def decimal_number_from_string(str_repr: str, base: int) -> DecimalNumber:
+    """
+    Same as DecimalNumber.from_string().
+    """
     __check_base_is_valid(str_repr, base)
 
 def __check_base_is_valid(input_str: str, base: int):

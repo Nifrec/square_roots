@@ -15,7 +15,10 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
-DIGIT_TO_STRING = {x:str(x) for x in range(0, 11)}
+DIGIT_TO_STRING = {x: str(x) for x in range(0, 11)}
 ALPHABET = {chr(x) for x in range(ord("a"), ord("z")+1)}
 HEX_OFFSET = ord("a") - 10
-DIGIT_TO_STRING.update({ord(x) - HEX_OFFSET:x for x in ALPHABET})
+DIGIT_TO_STRING.update({ord(x) - HEX_OFFSET: x for x in ALPHABET})
+
+STRING_TO_DIGIT = {string: digit_value for digit_value, string
+                   in DIGIT_TO_STRING.items()}

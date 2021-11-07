@@ -21,7 +21,7 @@ from square_roots.compute_square_root import compute_square_root
 
 class ComputeSquareRootTestCase(unittest.TestCase):
     """
-    Test numerical computation of 
+    Test numerical computation of square roots of various numbers.
     """
 
 

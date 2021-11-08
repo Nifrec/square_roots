@@ -28,14 +28,48 @@ class DecimalNumber:
     However, DecimalNumber is completely free from rounding errors.
     """
 
-    def __init__(self, base: int):
+    def __init__(self, base: int, sign: bool | int = 1):
         """
         Arguments:
         * base: base of the number system used to represent the number.
             Base 10 would result in 'ordinary' numbers,
             base 2 in binary numbers, base 16 in hexadecimal numbers, etc.
+        * sign: polarity of the DecimalNumber. Nonnegative ints and True
+            set the sign to positive,
+            negative ints and False set the sign to negative.
         """
         self.__base = base
+        self.set_sign(sign)
+
+    @property
+    def sign(self) -> int:
+        if self.__is_positive:
+            return 1
+        else:
+            return -1
+
+    def is_positive(self) -> bool:
+        return self.__is_positive
+
+    def is_negative(self) -> bool:
+        return not self.__is_positive
+
+    def set_sign(self, sign: int | bool):
+        """
+        Set the sign of the number.
+
+        Arguments:
+        * sign: if sign is a negative int or the bool False, 
+            the sign is net to negative.
+            For a nonnegative int or the bool True,
+            the sign is set to positive.
+        """
+        if type(sign) is int:
+            self.__is_positive = sign >= 0
+        elif type(sign) is bool:
+            self.__is_positive = sign
+        else:
+            raise ValueError("Sign must be an int or a bool.")
 
     def __add__(self, other: DecimalNumber | int):
         ...
@@ -101,10 +135,27 @@ class DecimalNumber:
             This argument must satisfy 2 <= base <= 34
         """
         decimal_number_from_string(str_repr, base)
-        DecimalNumber.__parse_string(str_repr)
-    @staticmethod
-    def __parse_string(str_repr):
         str_repr = str_repr.lower()
+        DecimalNumber.__check_valid_string_repr(str_repr)
+
+        result = DecimalNumber(base)
+        integer_part, decimal_part = str_repr.split(".")
+        integer_part = reversed(integer_part)
+        integer_part = tuple(map(lambda x: STRING_TO_DIGIT[x], integer_part))
+        decimal_part = tuple(map(lambda x: STRING_TO_DIGIT[x], decimal_part))
+
+        for i in range(len(integer_part)):
+            result[i] = integer_part[i]
+        
+        i = -1
+        for digit in decimal_part:
+            result[i] = digit
+            i += 1
+        
+        return result
+
+    @staticmethod
+    def __check_valid_string_repr(str_repr):
         if re.fullmatch(r"[0-9a-z]+\.[0-9a-z]*", str_repr) is None:
             raise ValueError("Invalid string representation.")
 

@@ -48,6 +48,17 @@ class DecimalNumberConstructorTestCase(unittest.TestCase):
         self.assertEqual(input_str, result_str)
         self.assertEqual(input_base, dec_num.base())
 
+    def test_constructor_3(self):
+        """
+        Base case: negative number.
+        """
+        input_str="-1.02"
+        input_base = 10
+        dec_num = DecimalNumber.from_string(input_str, input_base)
+        result_str = str(dec_num)
+        self.assertEqual(input_str, result_str)
+        self.assertEqual(input_base, dec_num.base())
+
     def test_constructor_err_1(self):
         """
         Error case: wrong base.
@@ -84,6 +95,93 @@ class DecimalNumberConstructorTestCase(unittest.TestCase):
         with self.assertRaises(ValueError):
             DecimalNumber.from_string(input_str, input_base)
         
+
+class DecimalNumberStringTestCase(unittest.TestCase):
+    """
+    Test class for infinite-precision numbers.
+
+    This testcase focuses on str() and repr() dunder methods.
+
+    Also tests the __setitem__ method implicitly.
+    """
+
+    def test_str_1(self):
+        """
+        Base case: binary number.
+        """
+        decnum = DecimalNumber(2)
+        decnum[0]=1
+        decnum[1]=0
+        decnum[2]=1
+        decnum[-1]=0
+        decnum[-2]=1
+        expected_str = "101.01"
+        expected_repr = 'DecimalNumber.from_string("101.01")'
+
+        self.assertEqual(str(decnum), expected_str)
+        self.assertEqual(repr(decnum), expected_repr)
+
+
+    def test_str_2(self):
+        """
+        Base case: hexadecimal number.
+        Zeros are added implicitly.
+        """
+        decnum = DecimalNumber(16)
+        decnum[5]="a"
+        decnum[1]=0
+        decnum[2]="f"
+        decnum[-1]=0
+        decnum[-2]=1
+        decnum[-3]="d"
+        expected_str = "a00f0.01d"
+        expected_repr = 'DecimalNumber.from_string("101.01")'
+
+        self.assertEqual(str(decnum), expected_str)
+        self.assertEqual(repr(decnum), expected_repr)
+
+    def test_str_3(self):
+        """
+        Base case: negative number.
+        """
+        decnum = DecimalNumber(10)
+        decnum.set_sign(True)
+        decnum[0]=4
+        decnum[1]=3
+        decnum[-1]=3
+        expected_str = "-34.3"
+        expected_repr = 'DecimalNumber.from_string("-3.43")'
+
+        self.assertEqual(str(decnum), expected_str)
+        self.assertEqual(repr(decnum), expected_repr)
+
+class DecimalNumberSignTestCase(unittest.TestCase):
+    """
+    Test class for infinite-precision numbers.
+
+    This testcase focuses on polarity of a DecimalNumber.
+    """
+
+    def test_sign_constructor(self):
+        decnum = DecimalNumber(10, sign=False)
+        self.assertFalse(decnum.is_positive())
+        self.assertTrue(decnum.is_negative())
+        self.assertEqual(decnum.sign, -1)
+
+        decnum = DecimalNumber(10, sign=True)
+        self.assertFalse(decnum.is_negative())
+        self.assertTrue(decnum.is_positive())
+        self.assertEqual(decnum.sign, 1)
+
+    def test_sign_setter_bool(self):
+        decnum = DecimalNumber(10, sign=False)
+        decnum.set_sign(True)
+        self.assertTrue(decnum.is_positive())
+
+    def test_sign_setter_int(self):
+        decnum = DecimalNumber(10, sign=True)
+        decnum.set_sign(-1)
+        self.assertTrue(decnum.is_negative())
 
 if __name__ == "__main__":
     unittest.main()

@@ -40,6 +40,11 @@ class DecimalNumber:
         """
         self.__base = base
         self.set_sign(sign)
+        # Dictionary mapping indices to digit values.
+        # Conventions:
+        # * Index 0 is the first integer digit, and -1 the first decimal digit.
+        # * Digits with value 0 are not explicitly stored in self.__digits.
+        self.__digits = dict()
 
     @property
     def sign(self) -> int:
@@ -80,25 +85,73 @@ class DecimalNumber:
     def shift(self, positions: int):
         ...
 
-    def __setitem__(self, position: int, value: int):
-        ...
+    def __setitem__(self, position: int, value: int | str):
+        """
+        Set an individual digit of the decimal number.
 
-    def check_valid_digit(self, d: int):
+        Arguments:
+        * position: index of digit to set. Index 0 is the first integer digit,
+            index 1 the second integer digit, -1 the first decimal digit, etc.
+        * value: value to assign to the digit. Can be an integer in [0, 9]
+            Or a string in [0-9a-zA-Z]
+        """
+        if isinstance(value, str):
+            value = value.lower()
+            value = STRING_TO_DIGIT[value]
+        self.__check_valid_digit(value)
+        if value != 0:
+            self.__digits[position] = value
+        elif position in self.__digits.keys():
+            del self.__digits[position]
+    
+    def __getitem__(self, position: int) -> int:
+        if not type(position) == int:
+            raise IndexError("DecimalNumbers can only be indexed with integers")
+        elif position in self.__digits.keys():
+            return self.__digits[position]
+        else:
+            # Zero-digits are not explicitly stored in self.__digits
+            return 0
+
+    def __check_valid_digit(self, d: int):
         """
         Check if 0 <= d < self.base.
         Raise an error otherwise.
         """
-        ...
+        if d < 0 or d >= self.base:
+            raise RuntimeError(
+                f"Digit value exeeds maximum digit value in base {self.base}")
 
     @property
     def base(self) -> int:
         return self.__base
 
     def __str__(self) -> str:
-        ...
+        digit_positions = self.__digits.keys()
+        if len(digit_positions) == 0:
+            return "0."
+        most_significant_pos = max(digit_positions)
+        least_significant_pos = min(digit_positions)
+
+        if most_significant_pos < 0:
+            integer_part = ["0"]
+        else:
+            integer_part = ["0"]*(most_significant_pos+1)
+            for pos in range(most_significant_pos+1):
+                if pos in digit_positions:
+                    integer_part[most_significant_pos-pos] = DIGIT_TO_STRING[self.__digits[pos]]
+        
+        decimal_part = [""]
+        if least_significant_pos < 0:
+            decimal_part = ["0"]*abs(least_significant_pos)
+            for pos in range(-1, least_significant_pos -1, -1):
+                if pos in digit_positions:
+                    decimal_part[-1 - pos] = DIGIT_TO_STRING[self.__digits[pos]]
+        
+        return "-"*(not self.__is_positive) + "".join(integer_part) + "." + "".join(decimal_part)
 
     def __repr__(self) -> str:
-        ...
+        return f'DecimalNumber.from_string("{str(self)}")'
 
     def __eq__(self, other: DecimalNumber | int) -> bool:
         raise NotImplementedError()
@@ -134,30 +187,8 @@ class DecimalNumber:
             Base 10 is 'normal' decimal notation, 2 is binary, 16 hexadecimal.
             This argument must satisfy 2 <= base <= 34
         """
-        decimal_number_from_string(str_repr, base)
-        str_repr = str_repr.lower()
-        DecimalNumber.__check_valid_string_repr(str_repr)
-
-        result = DecimalNumber(base)
-        integer_part, decimal_part = str_repr.split(".")
-        integer_part = reversed(integer_part)
-        integer_part = tuple(map(lambda x: STRING_TO_DIGIT[x], integer_part))
-        decimal_part = tuple(map(lambda x: STRING_TO_DIGIT[x], decimal_part))
-
-        for i in range(len(integer_part)):
-            result[i] = integer_part[i]
-        
-        i = -1
-        for digit in decimal_part:
-            result[i] = digit
-            i += 1
-        
-        return result
-
-    @staticmethod
-    def __check_valid_string_repr(str_repr):
-        if re.fullmatch(r"[0-9a-z]+\.[0-9a-z]*", str_repr) is None:
-            raise ValueError("Invalid string representation.")
+        return decimal_number_from_string(str_repr, base)
+    
 
 
 def decimal_number_from_string(str_repr: str, base: int) -> DecimalNumber:
@@ -165,11 +196,36 @@ def decimal_number_from_string(str_repr: str, base: int) -> DecimalNumber:
     Same as DecimalNumber.from_string().
     """
     __check_base_is_valid(str_repr, base)
+    str_repr = str_repr.lower()
+    __check_valid_string_repr(str_repr)
+
+    result = DecimalNumber(base)
+    if str_repr[0] == "-":
+        result.set_sign(-1)
+        str_repr = str_repr[1:]
+    integer_part, decimal_part = str_repr.split(".")
+    integer_part = reversed(integer_part)
+    integer_part = tuple(map(lambda x: STRING_TO_DIGIT[x], integer_part))
+    decimal_part = tuple(map(lambda x: STRING_TO_DIGIT[x], decimal_part))
+
+    for i in range(len(integer_part)):
+        result[i] = integer_part[i]
+
+    i = -1
+    for digit in decimal_part:
+        result[i] = digit
+        i -= 1
+
+    return result
+
+def __check_valid_string_repr(str_repr):
+        if re.fullmatch(r"-?[0-9a-z]+\.[0-9a-z]*", str_repr) is None:
+            raise ValueError("Invalid string representation.")
 
 def __check_base_is_valid(input_str: str, base: int):
     if base > 35:
         raise NotImplementedError("Unly bases up to 34 are supported, "
-                                    "for notational-practical reasons")
+                                  "for notational-practical reasons")
     elif base < 2:
         raise ValueError("Invalid base, must be 2 or greater.")
     else:
@@ -178,13 +234,12 @@ def __check_base_is_valid(input_str: str, base: int):
             raise RuntimeError(
                 "Input string uses greater base than specified base.")
 
+
 def __find_max_digit_in_str(decimal_string: str) -> int:
     """
     Given an input string of the form "I.D" 
     (see DecimalNumber.from_string for the syntax convention),
     find the digit with the greatest value and return this value.
     """
-    decimal_string = decimal_string.replace(".", "")
-    return max (STRING_TO_DIGIT[digit] for digit in decimal_string)
-        
-
+    decimal_string = decimal_string.replace(".", "").replace("-", "")
+    return max(STRING_TO_DIGIT[digit] for digit in decimal_string)

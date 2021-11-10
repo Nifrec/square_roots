@@ -79,7 +79,13 @@ class DecimalNumber:
     def __add__(self, other: DecimalNumber | int):
         raise NotImplementedError()
 
+    def __sub__(self, other: DecimalNumber | int):
+        raise NotImplementedError()
+
     def __mul__(self, other: DecimalNumber | int):
+        raise NotImplementedError()
+
+    def __truediv__(self, other: DecimalNumber | int):
         raise NotImplementedError()
 
     def shift(self, positions: int):

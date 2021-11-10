@@ -35,7 +35,7 @@ class DecimalNumberConstructorTestCase(unittest.TestCase):
         dec_num = DecimalNumber.from_string(input_str, input_base)
         result_str = str(dec_num)
         self.assertEqual(input_str, result_str)
-        self.assertEqual(input_base, dec_num.base())
+        self.assertEqual(input_base, dec_num.base)
 
     def test_constructor_2(self):
         """
@@ -46,7 +46,7 @@ class DecimalNumberConstructorTestCase(unittest.TestCase):
         dec_num = DecimalNumber.from_string(input_str, input_base)
         result_str = str(dec_num)
         self.assertEqual(input_str, result_str)
-        self.assertEqual(input_base, dec_num.base())
+        self.assertEqual(input_base, dec_num.base)
 
     def test_constructor_3(self):
         """
@@ -57,7 +57,7 @@ class DecimalNumberConstructorTestCase(unittest.TestCase):
         dec_num = DecimalNumber.from_string(input_str, input_base)
         result_str = str(dec_num)
         self.assertEqual(input_str, result_str)
-        self.assertEqual(input_base, dec_num.base())
+        self.assertEqual(input_base, dec_num.base)
 
     def test_constructor_err_1(self):
         """
@@ -94,6 +94,21 @@ class DecimalNumberConstructorTestCase(unittest.TestCase):
         input_base = 0
         with self.assertRaises(ValueError):
             DecimalNumber.from_string(input_str, input_base)
+
+    def test_constructor_1_getter(self):
+        """
+        Base case: same as test_constructor_1,
+        but now checking the result with getter methods.
+        """
+        input_str = "101.03"
+        input_base = 10
+        dec_num = DecimalNumber.from_string(input_str, input_base)
+        self.assertEqual(dec_num[-2], 3)
+        self.assertEqual(dec_num[-1], 0)
+        self.assertEqual(dec_num[0], 1)
+        self.assertEqual(dec_num[1], 0)
+        self.assertEqual(dec_num[2], 1)
+        self.assertEqual(input_base, dec_num.base)
         
 
 class DecimalNumberStringTestCase(unittest.TestCase):
@@ -134,8 +149,8 @@ class DecimalNumberStringTestCase(unittest.TestCase):
         decnum[-1]=0
         decnum[-2]=1
         decnum[-3]="d"
-        expected_str = "a00f0.01d"
-        expected_repr = 'DecimalNumber.from_string("101.01")'
+        expected_str = "a00f00.01d"
+        expected_repr = 'DecimalNumber.from_string("a00f00.01d")'
 
         self.assertEqual(str(decnum), expected_str)
         self.assertEqual(repr(decnum), expected_repr)
@@ -145,12 +160,12 @@ class DecimalNumberStringTestCase(unittest.TestCase):
         Base case: negative number.
         """
         decnum = DecimalNumber(10)
-        decnum.set_sign(True)
+        decnum.set_sign(False)
         decnum[0]=4
         decnum[1]=3
         decnum[-1]=3
         expected_str = "-34.3"
-        expected_repr = 'DecimalNumber.from_string("-3.43")'
+        expected_repr = 'DecimalNumber.from_string("-34.3")'
 
         self.assertEqual(str(decnum), expected_str)
         self.assertEqual(repr(decnum), expected_repr)

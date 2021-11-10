@@ -77,13 +77,26 @@ class DecimalNumber:
             raise ValueError("Sign must be an int or a bool.")
 
     def __add__(self, other: DecimalNumber | int):
-        ...
+        raise NotImplementedError()
 
     def __mul__(self, other: DecimalNumber | int):
-        ...
+        raise NotImplementedError()
 
     def shift(self, positions: int):
-        ...
+        if positions == 0:
+            return
+        old_digits = self.__digits.copy()
+        self.__digits = {old_pos + positions: self.__digits[old_pos]
+                         for old_pos in old_digits.keys()}
+
+    def __int__(self) -> int:
+        raise NotImplementedError()
+
+    def __round__(self, ndigits: int) -> float:
+        raise NotImplementedError()
+
+    def __float__(self) -> float:
+        raise NotImplementedError()
 
     def __setitem__(self, position: int, value: int | str):
         """
@@ -103,10 +116,11 @@ class DecimalNumber:
             self.__digits[position] = value
         elif position in self.__digits.keys():
             del self.__digits[position]
-    
+
     def __getitem__(self, position: int) -> int:
         if not type(position) == int:
-            raise IndexError("DecimalNumbers can only be indexed with integers")
+            raise IndexError(
+                "DecimalNumbers can only be indexed with integers")
         elif position in self.__digits.keys():
             return self.__digits[position]
         else:
@@ -139,15 +153,17 @@ class DecimalNumber:
             integer_part = ["0"]*(most_significant_pos+1)
             for pos in range(most_significant_pos+1):
                 if pos in digit_positions:
-                    integer_part[most_significant_pos-pos] = DIGIT_TO_STRING[self.__digits[pos]]
-        
+                    integer_part[most_significant_pos -
+                                 pos] = DIGIT_TO_STRING[self.__digits[pos]]
+
         decimal_part = [""]
         if least_significant_pos < 0:
             decimal_part = ["0"]*abs(least_significant_pos)
-            for pos in range(-1, least_significant_pos -1, -1):
+            for pos in range(-1, least_significant_pos - 1, -1):
                 if pos in digit_positions:
-                    decimal_part[-1 - pos] = DIGIT_TO_STRING[self.__digits[pos]]
-        
+                    decimal_part[-1 -
+                                 pos] = DIGIT_TO_STRING[self.__digits[pos]]
+
         return "-"*(not self.__is_positive) + "".join(integer_part) + "." + "".join(decimal_part)
 
     def __repr__(self) -> str:
@@ -188,7 +204,6 @@ class DecimalNumber:
             This argument must satisfy 2 <= base <= 34
         """
         return decimal_number_from_string(str_repr, base)
-    
 
 
 def decimal_number_from_string(str_repr: str, base: int) -> DecimalNumber:
@@ -218,9 +233,11 @@ def decimal_number_from_string(str_repr: str, base: int) -> DecimalNumber:
 
     return result
 
+
 def __check_valid_string_repr(str_repr):
-        if re.fullmatch(r"-?[0-9a-z]+\.[0-9a-z]*", str_repr) is None:
-            raise ValueError("Invalid string representation.")
+    if re.fullmatch(r"-?[0-9a-z]+\.[0-9a-z]*", str_repr) is None:
+        raise ValueError("Invalid string representation.")
+
 
 def __check_base_is_valid(input_str: str, base: int):
     if base > 35:

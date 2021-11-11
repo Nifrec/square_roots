@@ -25,6 +25,8 @@ warnings.warn("Testcases still allow a NotImplementedError\n"
               "when doing arithmetic between numbers of different bases.\n"
               "A method DecimalNumber.convert_base(to:int) would resolve this!")
 
+warnings.warn("DecimalNumber comparisons with integers not yet implemented or tested.")
+
 
 class DecimalNumberConstructorTestCase(unittest.TestCase):
     """
@@ -472,7 +474,6 @@ class DecimalNumberComparisonTestCase(unittest.TestCase):
 
     These testcases test ==, <=, >=, >, <.
     """
-
     def test_lt(self):
         base = 10
 
@@ -544,6 +545,19 @@ class DecimalNumberComparisonTestCase(unittest.TestCase):
         self.assertFalse(num_1 >= num_2)
         self.assertTrue(num_1 >= num_1)
         self.assertTrue(num_2 >= num_1)
+
+    def test_zeros(self):
+        """
+        Corner case: 0. == -0.
+        """
+        base = 10
+        num_1 = DecimalNumber.from_string("0.", base)
+        num_2 = DecimalNumber.from_string("-0.", base)
+
+        self.assertFalse(num_1 > num_2)
+        self.assertFalse(num_1 < num_2)
+        self.assertTrue(num_1 == num_2)
+
 
 
 if __name__ == "__main__":

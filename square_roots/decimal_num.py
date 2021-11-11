@@ -290,7 +290,9 @@ class DecimalNumber:
             Base 10 is 'normal' decimal notation, 2 is binary, 16 hexadecimal.
             This argument must satisfy 2 <= base <= 34
         """
-        return _decimal_number_from_int(int_value, base)
+        result = DecimalNumber(base, int_value >= 0)
+        result.add_to_digit(0, abs(int_value))
+        return result
 
 
 def _decimal_number_from_string(str_repr: str, base: int) -> DecimalNumber:
@@ -347,12 +349,3 @@ def __find_max_digit_in_str(decimal_string: str) -> int:
     """
     decimal_string = decimal_string.replace(".", "").replace("-", "")
     return max(STRING_TO_DIGIT[digit] for digit in decimal_string)
-
-
-def _decimal_number_from_int(int_value: str, base: int) -> DecimalNumber:
-    """
-    Same as DecimalNumber.from_int().
-    """
-    result = DecimalNumber(base, int_value >= 0)
-    result.add_to_digit(0, abs(int_value))
-    return result

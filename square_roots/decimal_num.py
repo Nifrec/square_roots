@@ -16,6 +16,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from __future__ import annotations
 import re
+from typing import Iterator, Tuple
 
 from square_roots.digit_to_string import DIGIT_TO_STRING, STRING_TO_DIGIT
 
@@ -76,8 +77,69 @@ class DecimalNumber:
         else:
             raise ValueError("Sign must be an int or a bool.")
 
-    def __add__(self, other: DecimalNumber | int):
-        raise NotImplementedError()
+    def copy(self) -> DecimalNumber:
+        """
+        Create a new DecimalNumber instance identical to self.
+        """
+        result = DecimalNumber(self.base, self.sign)
+        for pos, digit_value in self:
+            result[pos] = digit_value
+        return result
+
+    def __iter__(self) -> Iterator[Tuple[int, int]]:
+        """
+        Return all (position, digit-value) pairs of this DecimalNumber.
+        Sort the output in descending order by position.
+        The greatest position is that of the most significant digit,
+        and the least position is that of the least significant digit.
+        Do not return any pair where the digit value is 0.
+        """
+        pairs = tuple((pos, digit_value) for pos, digit_value
+                      in sorted(self.__digits.items(), key=lambda x: x[0],
+                                reverse=True))
+        return iter(pairs)
+
+    def __add__(self, other: DecimalNumber | int) -> DecimalNumber:
+        result = self.copy()
+        result.add(other)
+        return result
+
+    def add(self, other: DecimalNumber | int):
+        """
+        Add another number to self in-place.
+
+        Arguments:
+            * other: decimal number to add to self.
+                Alternatively, also an integer can be given.
+        """
+        if isinstance(other, int):
+            other = DecimalNumber.from_int(other, self.base)
+        self.__raise_error_if_different_bases(other)
+        if other.sign < 0:
+            raise NotImplementedError()
+        for (pos, digit_value) in other:
+            self.add_to_digit(pos, digit_value)
+
+    def add_to_digit(self, pos: int, value: int):
+        """
+        Add [value] amount to the digit at position [pos].
+        E.g. adding value 3 at pos 4 in base=10 means adding 3000.
+        [value] may exceed self.base.
+        """
+        assert value >= 0
+
+        if value > 0:
+            carry_digits = (self[pos] + value)//self.base
+            self[pos] = (self[pos] + value) % self.base
+            if carry_digits > 0:
+                self.add_to_digit(pos+1, carry_digits)
+
+        # while value > self.base:
+        #     value -= self.base
+        #     self.add_to_digit(pos+1, 1)
+        # if self[pos] + value > self.base:
+        #     self[pos] = self[pos] + value - self.base
+        #     self.add_to_digit(pos+1, 1)
 
     def __sub__(self, other: DecimalNumber | int):
         raise NotImplementedError()
@@ -87,6 +149,11 @@ class DecimalNumber:
 
     def __truediv__(self, other: DecimalNumber | int):
         raise NotImplementedError()
+
+    def __raise_error_if_different_bases(self, other: DecimalNumber | int):
+        if isinstance(other, DecimalNumber) and other.base != self.base:
+            raise NotImplementedError(
+                "Arithmetic between numbers of different bases not (yet) supported.")
 
     def shift(self, positions: int):
         if positions == 0:
@@ -140,7 +207,7 @@ class DecimalNumber:
         """
         if d < 0 or d >= self.base:
             raise RuntimeError(
-                f"Digit value exeeds maximum digit value in base {self.base}")
+                f"Digit value exceeds maximum digit value in base {self.base}")
 
     @property
     def base(self) -> int:
@@ -209,10 +276,24 @@ class DecimalNumber:
             Base 10 is 'normal' decimal notation, 2 is binary, 16 hexadecimal.
             This argument must satisfy 2 <= base <= 34
         """
-        return decimal_number_from_string(str_repr, base)
+        return _decimal_number_from_string(str_repr, base)
+
+    @staticmethod
+    def from_int(int_value: int, base: int) -> DecimalNumber:
+        """
+        Construct a DecimalNumber from an integer with the given base.
+        Arguments:
+        * int_value: value of the decimal number.
+            E.g. int_value = 123 (base 10) 
+            would result in the DecimalNumber "123."
+        * base: amount of different values that a single digit can have.
+            Base 10 is 'normal' decimal notation, 2 is binary, 16 hexadecimal.
+            This argument must satisfy 2 <= base <= 34
+        """
+        return _decimal_number_from_int(int_value, base)
 
 
-def decimal_number_from_string(str_repr: str, base: int) -> DecimalNumber:
+def _decimal_number_from_string(str_repr: str, base: int) -> DecimalNumber:
     """
     Same as DecimalNumber.from_string().
     """
@@ -266,3 +347,12 @@ def __find_max_digit_in_str(decimal_string: str) -> int:
     """
     decimal_string = decimal_string.replace(".", "").replace("-", "")
     return max(STRING_TO_DIGIT[digit] for digit in decimal_string)
+
+
+def _decimal_number_from_int(int_value: str, base: int) -> DecimalNumber:
+    """
+    Same as DecimalNumber.from_int().
+    """
+    result = DecimalNumber(base, int_value >= 0)
+    result.add_to_digit(0, abs(int_value))
+    return result

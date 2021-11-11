@@ -317,6 +317,17 @@ class DecimalNumberAddTestCase(unittest.TestCase):
         expected = "-96.67"
         self.check_add(base_1, num_1, base_2, num_2, expected)
 
+    def test_add_decimal_3(self):
+        """
+        Corner case: both numbers are negative (-1.23) + (-32.11) = -33.34
+        """
+        base_1 = 10
+        num_1 = "-1.23"
+        base_2 = 10
+        num_2 = "-32.11"
+        expected = "-33.34"
+        self.check_add(base_1, num_1, base_2, num_2, expected)
+
     def test_add_binary_1(self):
         """
         Base case: 1.0101bin + 0.01bin = 1.3125dec + 0.25dec 
@@ -395,6 +406,20 @@ class DecimalNumberAddTestCase(unittest.TestCase):
         expected = "29.2b"
         self.assertEqual(result, expected)
 
+    def test_sub_from_digit_1(self):
+        """
+        Testcase used to debug test_add_decimal_2.
+        """
+        base_1 = 10
+        num_1 = "-98.01"
+        decnum = DecimalNumber.from_string(num_1, base_1)
+        # Number "1.34" already decomposed in (pos, value) pairs:
+        pos_val_pairs_to_subtract = ((0, 1), (-1, 3), (-2, 4))
+        expected_intermediates = ("-97.01", "-96.71", "-96.67")
+        for ((pos, value), expected) in zip(pos_val_pairs_to_subtract, expected_intermediates):
+            decnum._subtract_from_digit(pos, value)
+            self.assertEqual(str(decnum), expected)
+
 
 class DecimalNumberIterTestCase(unittest.TestCase):
     """
@@ -440,6 +465,85 @@ class DecimalNumberIterTestCase(unittest.TestCase):
         input_str = "010.30"
         expected = ((1, 1), (-1, 3))
         self.check_iter(base, input_str, expected)
+
+class DecimalNumberComparisonTestCase(unittest.TestCase):
+    """
+    Test class for infinite-precision numbers.
+
+    These testcases test ==, <=, >=, >, <.
+    """
+
+    def test_lt(self):
+        base = 10
+
+        num_1 = DecimalNumber.from_string("-12.34", base)
+        num_2 = DecimalNumber.from_string("23.45", base)
+        num_3 = DecimalNumber.from_string("100.003", base)
+
+        self.assertTrue(num_1 < num_2)
+        self.assertFalse(num_2 < num_1)
+        self.assertTrue(num_1 < num_3)
+        self.assertFalse(num_3 < num_1)
+        self.assertTrue(num_2 < num_3)
+        self.assertFalse(num_3 < num_2)
+
+        self.assertFalse(num_1 < num_1)
+        self.assertFalse(num_2 < num_2)
+
+    def test_gt(self):
+        base = 16
+
+        num_1 = DecimalNumber.from_string("-a.3e", base)
+        num_2 = DecimalNumber.from_string("-d.45", base)
+        num_3 = DecimalNumber.from_string("100.003", base)
+        num_4 = DecimalNumber.from_string("-a.3e0001", base)
+
+        self.assertTrue(num_1 > num_2)
+        self.assertFalse(num_2 > num_1)
+        self.assertTrue(num_3 > num_1)
+        self.assertFalse(num_1 > num_3)
+        self.assertTrue(num_3 > num_2)
+        self.assertFalse(num_2 > num_3)
+
+        self.assertTrue(num_1 > num_4)
+        self.assertFalse(num_4 > num_1)
+
+        self.assertFalse(num_1 > num_1)
+        self.assertFalse(num_3 > num_3)
+
+    def test_eq(self):
+        base = 2
+
+        num_1 = DecimalNumber.from_string("111.01", base)
+        num_2 = DecimalNumber.from_string("111.10", base)
+        num_3 = DecimalNumber.from_string("101.01", base)
+
+        self.assertTrue(num_1 == num_1)
+        self.assertFalse(num_2 == num_1)
+        self.assertTrue(num_3 == num_3)
+        self.assertFalse(num_1 == num_3)
+        self.assertTrue(num_2 == num_2)
+        self.assertFalse(num_2 == num_3)
+
+    def test_leq(self):
+        base = 2
+
+        num_1 = DecimalNumber.from_string("111.01", base)
+        num_2 = DecimalNumber.from_string("111.10", base)
+
+        self.assertTrue(num_1 <= num_2)
+        self.assertTrue(num_1 <= num_1)
+        self.assertFalse(num_2 <= num_1)
+
+    def test_geq(self):
+        base = 2
+
+        num_1 = DecimalNumber.from_string("111.01", base)
+        num_2 = DecimalNumber.from_string("111.10", base)
+
+        self.assertFalse(num_1 >= num_2)
+        self.assertTrue(num_1 >= num_1)
+        self.assertTrue(num_2 >= num_1)
 
 
 if __name__ == "__main__":

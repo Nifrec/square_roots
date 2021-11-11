@@ -103,24 +103,6 @@ class DecimalNumber:
         if isinstance(other, int):
             other = DecimalNumber.from_int(other, self.base)
         return add_decimal_numbers(self, other)
-        # result = self.copy()
-        # result.add(other)
-        # return result
-
-    # def add(self, other: DecimalNumber | int):
-    #     """
-    #     Add another number to self in-place.
-
-    #     Arguments:
-    #         * other: decimal number to add to self.
-    #             Alternatively, also an integer can be given.
-    #     """
-    #
-    #     self.__raise_error_if_different_bases(other)
-    #     if other.sign != self.sign:
-    #         raise NotImplementedError()
-    #     for (pos, digit_value) in other:
-    #         self._add_to_digit(pos, digit_value)
 
     def _add_to_digit(self, pos: int, value: int):
         """
@@ -158,11 +140,8 @@ class DecimalNumber:
             # First pay as much dept as we can.
             value -= self[pos]
             self[pos] = 0
-            print(f"Unaffordable dept: {value}, pos: {pos}")
             # Borrow remaining dept from higher positions.
             borrows = math.ceil(value/self.base)
-            print(
-                f"Amount borrows: {borrows}, borrowed value: {borrows * self.base}")
             self[pos] = borrows * self.base - value
             self._subtract_from_digit(pos+1, borrows)
 

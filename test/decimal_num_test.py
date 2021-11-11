@@ -15,9 +15,15 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
+from typing import Sequence, Tuple
 import unittest
+import warnings
 
 from square_roots.decimal_num import DecimalNumber
+
+warnings.warn("Testcases still allow a NotImplementedError\n"
+              "when doing arithmetic between numbers of different bases.\n"
+              "A method DecimalNumber.convert_base(to:int) would resolve this!")
 
 
 class DecimalNumberConstructorTestCase(unittest.TestCase):
@@ -248,6 +254,155 @@ class DecimalNumberShiftTestCase(unittest.TestCase):
         self.check_shift(base, input_str, expected, positions)
 
 
+class DecimalNumberAddTestCase(unittest.TestCase):
+    """
+    Test class for infinite-precision numbers.
+
+    This testcase focuses adding two numbers.
+    """
+
+    def check_add(self, base_1: int, num_1: str, base_2: int, num_2: str,
+                  expected_str: str):
+        decnum_1 = DecimalNumber.from_string(num_1, base_1)
+        decnum_2 = DecimalNumber.from_string(num_2, base_2)
+        result = str(decnum_1 + decnum_2)
+        self.assertEqual(expected_str, result)
+
+    def test_add_decimal_1(self):
+        """
+        Base case: 1.34 + 98.01 = 99.35
+        """
+        base_1 = 10
+        num_1 = "1.34"
+        base_2 = 10
+        num_2 = "98.01"
+        expected = "99.35"
+        self.check_add(base_1, num_1, base_2, num_2, expected)
+
+    def test_add_decimal_2(self):
+        """
+        Corner case: one number is negative 1.34 + (-98.01) = -96.67
+        """
+        base_1 = 10
+        num_1 = "1.34"
+        base_2 = 10
+        num_2 = "-98.01"
+        expected = "-96.67"
+        self.check_add(base_1, num_1, base_2, num_2, expected)
+
+    def test_add_binary_1(self):
+        """
+        Base case: 1.0101bin + 0.01bin = 1.3125dec + 0.25dec 
+            = 2.5625dec = 1.1001bin
+        """
+        base_1 = 2
+        num_1 = "1.0101"
+        base_2 = 2
+        num_2 = "0.01"
+        expected = "1.1001"
+        self.check_add(base_1, num_1, base_2, num_2, expected)
+
+    def test_add_binary_2(self):
+        """
+        Corner case: one number is negative 
+            1.0101bin +(-0.1bin) 
+            = 1.3125dec -0.5dec
+            = 0.8125dec
+            = 0.1101bin
+        """
+        base_1 = 2
+        num_1 = "1.0101"
+        base_2 = 2
+        num_2 = "-0.1"
+        expected = "0.1101"
+        self.check_add(base_1, num_1, base_2, num_2, expected)
+
+    def test_add_binary_2(self):
+        """
+        Corner case: one number is negative, result is also negative
+            0.0101bin +(-0.1bin) 
+            = 0.3125dec -0.5dec
+            = -0.8125dec
+            = -0.0011bin
+        """
+        base_1 = 2
+        num_1 = "0.0101"
+        base_2 = 2
+        num_2 = "-0.1"
+        expected = "-0.0011"
+        self.check_add(base_1, num_1, base_2, num_2, expected)
+
+    def test_add_mixed_bases(self):
+        decnum_1 = DecimalNumber.from_string("1.5", base=10)
+        decnum_2 = DecimalNumber.from_string("1.5", base=16)
+
+        with self.assertRaises(NotImplementedError):
+            decnum_1 + decnum_2
+
+    def test_add_returns_copy(self):
+        """
+        Corner case: addings two DecimalNumbers should return a fresh
+        object, and not modify one of the old objects.
+        """
+        base_1 = 10
+        num_1 = "1.34"
+        base_2 = 10
+        num_2 = "98.01"
+        decnum_1 = DecimalNumber.from_string(num_1, base_1)
+        decnum_2 = DecimalNumber.from_string(num_2, base_2)
+        decnum_3 = decnum_1 + decnum_2
+
+        self.assertIsNot(decnum_3, decnum_1)
+        self.assertIsNot(decnum_3, decnum_2)
+        # The following would only fail in case of an extremely weird bug.
+        # Still, it is important!
+        self.assertIsNot(decnum_1, decnum_2)
+
+
+class DecimalNumberIterTestCase(unittest.TestCase):
+    """
+    Test class for infinite-precision numbers.
+
+    This testcase focuses on the DecimalNumber.__iter__() method.
+    This method should return all (position, digit-value) pairs in
+    descending order (sorted on position).
+    """
+
+    def check_iter(self, base: int, input_str: int,
+                   expected: Sequence[Tuple[int, int]]):
+        decnum = DecimalNumber.from_string(input_str, base)
+
+        for actual, expected in zip(decnum, expected):
+            self.assertTupleEqual(actual, expected)
+
+    def test_iter_1(self):
+        """
+        Base case: decimal number.
+        """
+        base = 10
+        input_str = "4321,1234"
+        expected = ((3, 4), (2, 3), (1, 2), (0, 1),
+                    (-1, 1), (-2, 2), (-3, 3), (-4, 4))
+        self.check_iter(base, input_str, expected)
+
+    def test_iter_2(self):
+        """
+        Corner case: hexadecimal number.
+        Should return integers, not characters such as "a" and "f".
+        """
+        base = 16
+        input_str = "2af5.b"
+        expected = ((3, 2), (2, 10), (1, 15), (0, 5), (-1, 11))
+        self.check_iter(base, input_str, expected)
+
+    def test_iter_3(self):
+        """
+        Corner case: leading and tailing 0's should be ignored.
+        """
+        base = 10
+        input_str = "010.30"
+        expected = ((1, 1), (0, 0), (-1, 3))
+        self.check_iter(base, input_str, expected)
 
 
 if __name__ == "__main__":

@@ -358,6 +358,16 @@ class DecimalNumberAddTestCase(unittest.TestCase):
         # Still, it is important!
         self.assertIsNot(decnum_1, decnum_2)
 
+    def test_add_int(self):
+        """
+        corner case: add an integer to a hexadecimal number.
+        """
+        base = 16
+        decnum = DecimalNumber.from_string("1f.2b", base)
+        result = str(decnum + 10)
+        expected = "29.2b"
+        self.assertEqual(result, expected)
+
 
 class DecimalNumberIterTestCase(unittest.TestCase):
     """
@@ -372,7 +382,7 @@ class DecimalNumberIterTestCase(unittest.TestCase):
                    expected: Sequence[Tuple[int, int]]):
         decnum = DecimalNumber.from_string(input_str, base)
 
-        for actual, expected in zip(decnum, expected):
+        for actual, expected in zip(iter(decnum), expected):
             self.assertTupleEqual(actual, expected)
 
     def test_iter_1(self):
@@ -397,11 +407,11 @@ class DecimalNumberIterTestCase(unittest.TestCase):
 
     def test_iter_3(self):
         """
-        Corner case: leading and tailing 0's should be ignored.
+        Corner case: leading, tailing and intermediate 0's should be ignored.
         """
         base = 10
         input_str = "010.30"
-        expected = ((1, 1), (0, 0), (-1, 3))
+        expected = ((1, 1), (-1, 3))
         self.check_iter(base, input_str, expected)
 
 

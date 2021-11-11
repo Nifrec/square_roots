@@ -16,8 +16,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from __future__ import annotations
 import re
-from typing import Iterator, Tuple
-
+from typing import Any, Iterator, Tuple
+import math
 from square_roots.digit_to_string import DIGIT_TO_STRING, STRING_TO_DIGIT
 
 
@@ -100,31 +100,37 @@ class DecimalNumber:
         return iter(pairs)
 
     def __add__(self, other: DecimalNumber | int) -> DecimalNumber:
-        result = self.copy()
-        result.add(other)
-        return result
-
-    def add(self, other: DecimalNumber | int):
-        """
-        Add another number to self in-place.
-
-        Arguments:
-            * other: decimal number to add to self.
-                Alternatively, also an integer can be given.
-        """
         if isinstance(other, int):
             other = DecimalNumber.from_int(other, self.base)
-        self.__raise_error_if_different_bases(other)
-        if other.sign < 0:
-            raise NotImplementedError()
-        for (pos, digit_value) in other:
-            self.add_to_digit(pos, digit_value)
+        return add_decimal_numbers(self, other)
+        # result = self.copy()
+        # result.add(other)
+        # return result
 
-    def add_to_digit(self, pos: int, value: int):
+    # def add(self, other: DecimalNumber | int):
+    #     """
+    #     Add another number to self in-place.
+
+    #     Arguments:
+    #         * other: decimal number to add to self.
+    #             Alternatively, also an integer can be given.
+    #     """
+    #
+    #     self.__raise_error_if_different_bases(other)
+    #     if other.sign != self.sign:
+    #         raise NotImplementedError()
+    #     for (pos, digit_value) in other:
+    #         self._add_to_digit(pos, digit_value)
+
+    def _add_to_digit(self, pos: int, value: int):
         """
         Add [value] amount to the digit at position [pos].
         E.g. adding value 3 at pos 4 in base=10 means adding 3000.
-        [value] may exceed self.base.
+        [value] may exceed self.base,
+        and self[pos]+value may also exceed self.base:
+        in either case, self[pos] is trimmed in the range [0, self.base)
+        and the remaining carry digits are recursively 
+        added to higher positions.
         """
         assert value >= 0
 
@@ -132,7 +138,65 @@ class DecimalNumber:
             carry_digits = (self[pos] + value)//self.base
             self[pos] = (self[pos] + value) % self.base
             if carry_digits > 0:
-                self.add_to_digit(pos+1, carry_digits)
+                self._add_to_digit(pos+1, carry_digits)
+
+    def _subtract_from_digit(self, pos: int, value: int):
+        """
+        Subtract [value] amount from digit at position [pos].
+        If [value] > self[pos], recursively subtract borrows from higher
+        positions.
+        Raise an error if need to borrow and pos is the most significant digit.
+        """
+        assert value >= 0
+
+        if pos >= self.get_most_significant_pos() and value > self[pos]:
+            raise RuntimeError("Cannot subtract from position: "
+                               "unable to borrow sufficient "
+                               "from higher positions.")
+
+        if value > self[pos]:
+            # First pay as much dept as we can.
+            value -= self[pos]
+            self[pos] = 0
+            print(f"Unaffordable dept: {value}, pos: {pos}")
+            # Borrow remaining dept from higher positions.
+            borrows = math.ceil(value/self.base)
+            print(
+                f"Amount borrows: {borrows}, borrowed value: {borrows * self.base}")
+            self[pos] = borrows * self.base - value
+            self._subtract_from_digit(pos+1, borrows)
+
+        else:
+            self[pos] -= value
+
+    def get_most_significant_pos(self) -> int:
+        """
+        Return the position of the most significant digit.
+        0 is the position of first digit left of the float point,
+        1 the second, etc.
+
+        Return 0 if this number is (plus or minus) 0 (without any other digit).
+        """
+        if len(self.__digits.keys()) == 0:
+            return 0
+        else:
+            return max(self.__digits.keys())
+
+    def get_lest_significant_pos(self) -> int:
+        """
+        Return the position of the least significant digit.
+        0 is the position of first digit left of the float point,
+        -1 the first decimal digit, -2 the second decimal digit, etc.
+
+        Return 0 if this number is (plus or minus) 0 (without any other digit).
+        """
+        if len(self.__digits.keys()) == 0:
+            return 0
+        else:
+            return min(self.__digits.keys())
+
+    def get_most_significant_digit(self) -> int:
+        return self[self.get_most_significant_pos()]
 
     def __sub__(self, other: DecimalNumber | int):
         raise NotImplementedError()
@@ -143,8 +207,16 @@ class DecimalNumber:
     def __truediv__(self, other: DecimalNumber | int):
         raise NotImplementedError()
 
-    def __raise_error_if_different_bases(self, other: DecimalNumber | int):
-        if isinstance(other, DecimalNumber) and other.base != self.base:
+    def __raise_error_if_incompatible_num(self, other: Any):
+        """
+        Raise an error if other is not a DecimalNumber or if other
+        has a different base than self.base.
+        """
+        if not isinstance(other, DecimalNumber):
+            raise NotImplementedError("This arithmetric operation is currently "
+                                      "only supported between "
+                                      "two DecimalNumbers.")
+        elif other.base != self.base:
             raise NotImplementedError("Arithmetic between numbers of "
                                       "different bases not (yet) supported.")
 
@@ -174,14 +246,33 @@ class DecimalNumber:
         * value: value to assign to the digit. Can be an integer in [0, 9]
             Or a string in [0-9a-zA-Z]
         """
+        self.__raise_error_if_value_negative(value)
+
         if isinstance(value, str):
             value = value.lower()
             value = STRING_TO_DIGIT[value]
+
         self.__check_valid_digit(value)
         if value != 0:
             self.__digits[position] = value
         elif position in self.__digits.keys():
             del self.__digits[position]
+
+    def __raise_error_if_value_negative(self, value: int | str):
+        if ((isinstance(value, int) and value < 0)
+                or (isinstance(value, str) and value[0] == "-")):
+            raise ValueError("Can only set positive digit values.\n"
+                             "To change the polarity, "
+                             "use DecimalNumber.set_sign()")
+
+    def __check_valid_digit(self, d: int):
+        """
+        Check if d < self.base.
+        Raise an error otherwise.
+        """
+        if d < 0:
+            raise RuntimeError(
+                f"Digit value exceeds maximum digit value in base {self.base}")
 
     def __getitem__(self, position: int) -> int:
         if not type(position) == int:
@@ -192,15 +283,6 @@ class DecimalNumber:
         else:
             # Zero-digits are not explicitly stored in self.__digits
             return 0
-
-    def __check_valid_digit(self, d: int):
-        """
-        Check if 0 <= d < self.base.
-        Raise an error otherwise.
-        """
-        if d < 0 or d >= self.base:
-            raise RuntimeError(
-                f"Digit value exceeds maximum digit value in base {self.base}")
 
     @property
     def base(self) -> int:
@@ -237,20 +319,59 @@ class DecimalNumber:
     def __repr__(self) -> str:
         return f'DecimalNumber.from_string("{str(self)}")'
 
-    def __eq__(self, other: DecimalNumber | int) -> bool:
-        raise NotImplementedError()
+    def __eq__(self, other: DecimalNumber) -> bool:
+        max_pos = max(self.get_most_significant_pos(),
+                          other.get_most_significant_pos())
+        min_pos = min(self.get_lest_significant_pos(),
+                        other.get_lest_significant_pos())
 
-    def __geq__(self, other: DecimalNumber | int) -> bool:
-        raise NotImplementedError()
+        if other.base != self.base:
+            return False
+        # If both are simply "0.", then the sign doesn't matter.
+        elif max_pos == 0 and min_pos == 0 and self[0] == 0 and other[0] == 0:
+            return True
+        elif self.sign != other.sign:
+            return False
+        else:
+            
+            for pos in range(max_pos, min_pos-1, -1):
+                if self[pos] != other[pos]:
+                    return False
+            return True
+    def __ge__(self, other: DecimalNumber) -> bool:
+        self.__raise_error_if_incompatible_num(other)
+        return (self == other) | (self > other)
 
-    def __ge__(self, other: DecimalNumber | int) -> bool:
-        raise NotImplementedError()
+    def __gt__(self, other: DecimalNumber) -> bool:
+        self.__raise_error_if_incompatible_num(other)
+        if self == other:
+            return False
+        elif self.sign > other.sign:
+            return True
+        elif self.sign < other.sign:
+            return False
+        else:
+            # If both are negative, 
+            # then the number with the smallest magnitude is the greatest
+            bigger_mag_is_biggest = self.sign > 0
+            max_pos = max(self.get_most_significant_pos(),
+                          other.get_most_significant_pos())
+            min_pos = min(self.get_lest_significant_pos(),
+                          other.get_lest_significant_pos())
+            for pos in range(max_pos, min_pos-1, -1):
+                if self[pos] > other[pos]:
+                    return bigger_mag_is_biggest
+                if self[pos] < other[pos]:
+                    return not bigger_mag_is_biggest
+            return not bigger_mag_is_biggest
 
-    def __leq__(self, other: DecimalNumber | int) -> bool:
-        raise NotImplementedError()
+    def __le__(self, other: DecimalNumber) -> bool:
+        self.__raise_error_if_incompatible_num(other)
+        return (other >= self)
 
-    def __le__(self, other: DecimalNumber | int) -> bool:
-        raise NotImplementedError()
+    def __lt__(self, other: DecimalNumber) -> bool:
+        self.__raise_error_if_incompatible_num(other)
+        return (other > self)
 
     @staticmethod
     def from_string(str_repr: str, base: int) -> DecimalNumber:
@@ -286,7 +407,7 @@ class DecimalNumber:
             This argument must satisfy 2 <= base <= 34
         """
         result = DecimalNumber(base, int_value >= 0)
-        result.add_to_digit(0, abs(int_value))
+        result._add_to_digit(0, abs(int_value))
         return result
 
 
@@ -344,3 +465,59 @@ def __find_max_digit_in_str(decimal_string: str) -> int:
     """
     decimal_string = decimal_string.replace(".", "").replace("-", "")
     return max(STRING_TO_DIGIT[digit] for digit in decimal_string)
+
+
+def add_decimal_numbers(num_1: DecimalNumber, num_2: DecimalNumber) -> DecimalNumber:
+    """
+    Return a new DecimalNumber instance 
+    whose value is the sum of two other DecimalNumbers.
+
+    Operants must have the same base,
+    raise an error if they have different bases.
+
+    Arguments:
+    * num_1, num_2: DecimalNumbers whose sum to compute.
+    """
+    if num_1.base != num_2.base:
+        raise NotImplementedError(
+            "Can only add DecimalNumbers of the same base.")
+
+    if num_1.sign == num_2.sign:
+        return __add_decimal_numbers_same_sign(num_1, num_2)
+    else:
+        return __add_decimal_numbers_opposite_sign(num_1, num_2)
+
+
+def __add_decimal_numbers_same_sign(num_1: DecimalNumber,
+                                    num_2: DecimalNumber) -> DecimalNumber:
+    result = num_1.copy()
+    for (pos, digit_value) in num_2:
+        result._add_to_digit(pos, digit_value)
+    return result
+
+
+def __add_decimal_numbers_opposite_sign(num_1: DecimalNumber,
+                                        num_2: DecimalNumber) -> DecimalNumber:
+    # Find number greatest magnitute;
+    # subtract smallest from largest to avoid no-available-borrow problem.
+    # Set the correct sign separately.
+    num_1_inverted = num_1.copy()
+    num_1_inverted.set_sign(num_1.sign * -1)
+    if (num_1_inverted >= num_2):
+        if num_2.sign == 1:
+            biggest = num_1
+            smallest = num_2
+        else:
+            biggest = num_2
+            smallest = num_1
+    elif num_2.sign == 1:
+        biggest = num_2
+        smallest = num_1
+    else:
+        biggest = num_1
+        smallest = num_2
+    result = biggest.copy()
+    result.set_sign(biggest.sign)
+    for (pos, digit_value) in smallest:
+        result._subtract_from_digit(pos, digit_value)
+    return result

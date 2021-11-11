@@ -30,7 +30,8 @@ class DecimalNumberConstructorTestCase(unittest.TestCase):
     """
     Test class for infinite-precision numbers.
 
-    This testcase focuses on the DecimalNumber.from_string() static method.
+    This testcase focuses on the DecimalNumber.from_string() and .from_int() 
+    static methods.
     """
 
     def test_constructor_1(self):
@@ -64,6 +65,30 @@ class DecimalNumberConstructorTestCase(unittest.TestCase):
         dec_num = DecimalNumber.from_string(input_str, input_base)
         result_str = str(dec_num)
         self.assertEqual(input_str, result_str)
+        self.assertEqual(input_base, dec_num.base)
+
+    def test_constructor_int_1(self):
+        """
+        Base case: base-10 number.
+        """
+        input_int = 123
+        input_base = 10
+        expected = "123."
+        dec_num = DecimalNumber.from_int(input_int, input_base)
+        result_str = str(dec_num)
+        self.assertEqual(expected, result_str)
+        self.assertEqual(input_base, dec_num.base)
+
+    def test_constructor_int_2(self):
+        """
+        Base case: hexadecimal number.
+        """
+        input_int = 123
+        input_base = 16
+        expected = "7b."
+        dec_num = DecimalNumber.from_int(input_int, input_base)
+        result_str = str(dec_num)
+        self.assertEqual(expected, result_str)
         self.assertEqual(input_base, dec_num.base)
 
     def test_constructor_err_1(self):
@@ -116,6 +141,8 @@ class DecimalNumberConstructorTestCase(unittest.TestCase):
         self.assertEqual(dec_num[1], 0)
         self.assertEqual(dec_num[2], 1)
         self.assertEqual(input_base, dec_num.base)
+
+    
 
 
 class DecimalNumberStringTestCase(unittest.TestCase):
@@ -390,7 +417,7 @@ class DecimalNumberIterTestCase(unittest.TestCase):
         Base case: decimal number.
         """
         base = 10
-        input_str = "4321,1234"
+        input_str = "4321.1234"
         expected = ((3, 4), (2, 3), (1, 2), (0, 1),
                     (-1, 1), (-2, 2), (-3, 3), (-4, 4))
         self.check_iter(base, input_str, expected)

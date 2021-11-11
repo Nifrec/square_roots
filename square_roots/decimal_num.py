@@ -134,13 +134,6 @@ class DecimalNumber:
             if carry_digits > 0:
                 self.add_to_digit(pos+1, carry_digits)
 
-        # while value > self.base:
-        #     value -= self.base
-        #     self.add_to_digit(pos+1, 1)
-        # if self[pos] + value > self.base:
-        #     self[pos] = self[pos] + value - self.base
-        #     self.add_to_digit(pos+1, 1)
-
     def __sub__(self, other: DecimalNumber | int):
         raise NotImplementedError()
 
@@ -152,8 +145,8 @@ class DecimalNumber:
 
     def __raise_error_if_different_bases(self, other: DecimalNumber | int):
         if isinstance(other, DecimalNumber) and other.base != self.base:
-            raise NotImplementedError(
-                "Arithmetic between numbers of different bases not (yet) supported.")
+            raise NotImplementedError("Arithmetic between numbers of "
+                                      "different bases not (yet) supported.")
 
     def shift(self, positions: int):
         if positions == 0:
@@ -237,7 +230,9 @@ class DecimalNumber:
                     decimal_part[-1 -
                                  pos] = DIGIT_TO_STRING[self.__digits[pos]]
 
-        return "-"*(not self.__is_positive) + "".join(integer_part) + "." + "".join(decimal_part)
+        result = "-"*(not self.__is_positive)
+        result += "".join(integer_part) + "." + "".join(decimal_part)
+        return result
 
     def __repr__(self) -> str:
         return f'DecimalNumber.from_string("{str(self)}")'
